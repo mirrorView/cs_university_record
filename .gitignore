@@ -2,3 +2,7 @@ tags
 *.bin
 *.o
 *.img
+
+os_learn/src/hd
+os_learn/src/master.img.lock
+os_learn/src/build/*
