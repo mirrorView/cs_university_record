@@ -8,14 +8,14 @@
             "name": "onix - Build and debug kernel",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/kernel.bin",
+            "program": "${workspaceFolder}/src/build/kernel.bin",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerServerAddress": "localhost:1234",
+            "miDebuggerServerAddress": "192.168.150.128:1234",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

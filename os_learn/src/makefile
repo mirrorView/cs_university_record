@@ -35,7 +35,35 @@ $(BUILD_DIR)/start.o: $(SRC)/kernel/start.asm
 $(BUILD_DIR)/io.o: $(SRC)/kernel/io.asm
 	nasm -f elf32 $< -o $@
 
-$(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/start.o $(BUILD_DIR)/main.o $(BUILD_DIR)/io.o $(BUILD_DIR)/string.o $(BUILD_DIR)/console.o
+$(BUILD_DIR)/schedule.o: $(SRC)/kernel/schedule.asm
+	nasm -f elf32 $< -o $@
+
+$(BUILD_DIR)/handler.o: $(SRC)/kernel/handler.asm
+	nasm -f elf32 $< -o $@
+
+$(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/start.o \
+	$(BUILD_DIR)/main.o \
+	$(BUILD_DIR)/io.o \
+	$(BUILD_DIR)/string.o \
+	$(BUILD_DIR)/console.o \
+	$(BUILD_DIR)/printk.o \
+	$(BUILD_DIR)/vsprintf.o \
+	$(BUILD_DIR)/assert.o	\
+	$(BUILD_DIR)/debug.o	\
+	$(BUILD_DIR)/global.o	\
+	$(BUILD_DIR)/schedule.o	\
+	$(BUILD_DIR)/task.o	\
+	$(BUILD_DIR)/handler.o	\
+	$(BUILD_DIR)/interrupt.o	\
+	$(BUILD_DIR)/stdlib.o	\
+	$(BUILD_DIR)/clock.o	\
+	$(BUILD_DIR)/time.o	\
+	$(BUILD_DIR)/rtc.o	\
+	$(BUILD_DIR)/memory.o	\
+	$(BUILD_DIR)/gate.o	\
+	$(BUILD_DIR)/syscall.o	\
+	$(BUILD_DIR)/list.o
+
 	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
 $(BUILD_DIR)/system.bin: $(BUILD_DIR)/kernel.bin
@@ -56,7 +84,53 @@ $(BUILD_DIR)/string.o: $(SRC)/lib/string.c
 $(BUILD_DIR)/console.o: $(SRC)/kernel/console.c
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
 
+$(BUILD_DIR)/printk.o: $(SRC)/kernel/printk.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
 
+$(BUILD_DIR)/vsprintf.o: $(SRC)/lib/vsprintf.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+
+$(BUILD_DIR)/assert.o: $(SRC)/kernel/assert.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+
+$(BUILD_DIR)/debug.o: $(SRC)/kernel/debug.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+
+$(BUILD_DIR)/global.o: $(SRC)/kernel/global.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+
+$(BUILD_DIR)/task.o: $(SRC)/kernel/task.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@		
+
+$(BUILD_DIR)/interrupt.o: $(SRC)/kernel/interrupt.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+
+$(BUILD_DIR)/stdlib.o: $(SRC)/lib/stdlib.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+
+$(BUILD_DIR)/clock.o: $(SRC)/kernel/clock.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@		
+
+$(BUILD_DIR)/time.o: $(SRC)/kernel/time.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+
+$(BUILD_DIR)/rtc.o: $(SRC)/kernel/rtc.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+
+$(BUILD_DIR)/memory.o: $(SRC)/kernel/memory.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+
+$(BUILD_DIR)/bitmap.o: $(SRC)/kernel/bitmap.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@		
+
+$(BUILD_DIR)/gate.o: $(SRC)/kernel/gate.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+
+$(BUILD_DIR)/syscall.o: $(SRC)/kernel/syscall.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+
+$(BUILD_DIR)/list.o: $(SRC)/kernel/list.c
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
 ############################################################## 定义函数 加载程序到硬盘 #####################################################
 .PHONY:mk_dir hd clean build all run  
 
@@ -66,9 +140,36 @@ mk_dir:
 hd:
 	dd if=$(BUILD_DIR)/boot.bin of=master.img bs=512 count=1  conv=notrunc
 	dd if=$(BUILD_DIR)/loader.bin of=master.img bs=512 count=4 seek=2  conv=notrunc
+	test -n "$$(find $(BUILD)/system.bin -size -100k)"
 	dd if=$(BUILD_DIR)/system.bin of=master.img bs=512 count=200 seek=10 conv=notrunc
 
-build:$(BUILD_DIR)/boot.bin $(BUILD_DIR)/loader.bin $(BUILD_DIR)/start.o $(BUILD_DIR)/io.o $(BUILD_DIR)/main.o $(BUILD_DIR)/console.o  $(BUILD_DIR)/string.o  $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/system.bin $(BUILD_DIR)/system.map
+build:$(BUILD_DIR)/boot.bin \
+	$(BUILD_DIR)/loader.bin \
+	$(BUILD_DIR)/start.o \
+	$(BUILD_DIR)/io.o \
+	$(BUILD_DIR)/main.o \
+	$(BUILD_DIR)/console.o  \
+	$(BUILD_DIR)/string.o  \
+	$(BUILD_DIR)/printk.o	\
+	$(BUILD_DIR)/vsprintf.o \
+	$(BUILD_DIR)/assert.o	\
+	$(BUILD_DIR)/debug.o	\
+	$(BUILD_DIR)/global.o	\
+	$(BUILD_DIR)/schedule.o	\
+	$(BUILD_DIR)/task.o	\
+	$(BUILD_DIR)/handler.o	\
+	$(BUILD_DIR)/interrupt.o	\
+	$(BUILD_DIR)/stdlib.o	\
+	$(BUILD_DIR)/clock.o	\
+	$(BUILD_DIR)/time.o	\
+	$(BUILD_DIR)/rtc.o	\
+	$(BUILD_DIR)/memory.o	\
+	$(BUILD_DIR)/gate.o	\
+	$(BUILD_DIR)/syscall.o	\
+	$(BUILD_DIR)/list.o	\
+	$(BUILD_DIR)/kernel.bin \
+	$(BUILD_DIR)/system.bin \
+	$(BUILD_DIR)/system.map
 	
 
 clean:

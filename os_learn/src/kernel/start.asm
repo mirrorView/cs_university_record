@@ -1,10 +1,18 @@
 [bits 32]
 
+extern console_init
+extern gdt_init
+extern memory_init
 extern kernel_init
 
 global _start
 _start:
-    ;mov byte [0xb8000], 'K'; 表示进入了内核
-    call kernel_init
-    xchg bx,bx
+    push ebx; ards_count
+    push eax; magic
+
+    call console_init   ; 控制台初始化
+    call gdt_init       ; 全局描述符初始化
+    call memory_init    ; 内存初始化
+    call kernel_init    ; 内核初始化
+
     jmp $; 阻塞
