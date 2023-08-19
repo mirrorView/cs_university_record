@@ -3,8 +3,8 @@ plugin_ctrl: unmapped=true, biosdev=true, speaker=true, extfpuirq=true, parallel
 config_interface: textconfig
 display_library: x
 memory: host=32, guest=32
-romimage: file="/home/gc/Desktop/workspace/bochs-2.7/bios/BIOS-bochs-latest", address=0x00000000, options=none
-vgaromimage: file="/home/gc/Desktop/workspace/bochs-2.7/bios/VGABIOS-lgpl-latest"
+romimage: file="/home/gc/Desktop/workspace/bochs-2.7-gdb/bios/BIOS-bochs-latest", address=0x00000000, options=none
+vgaromimage: file="/home/gc/Desktop/workspace/bochs-2.7-gdb/bios/VGABIOS-lgpl-latest"
 boot: disk
 floppy_bootsig_check: disabled=0
 floppya: type=1_44
