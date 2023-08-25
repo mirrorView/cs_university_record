@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "printk.h": "c"
+        "printk.h": "c",
+        "bitmap.h": "c"
     }
 }

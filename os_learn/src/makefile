@@ -62,7 +62,8 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/start.o \
 	$(BUILD_DIR)/memory.o	\
 	$(BUILD_DIR)/gate.o	\
 	$(BUILD_DIR)/syscall.o	\
-	$(BUILD_DIR)/list.o
+	$(BUILD_DIR)/list.o	\
+	$(BUILD_DIR)/bitmap.o
 
 	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
@@ -130,7 +131,9 @@ $(BUILD_DIR)/syscall.o: $(SRC)/kernel/syscall.c
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
 
 $(BUILD_DIR)/list.o: $(SRC)/kernel/list.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
+
+
 ############################################################## 定义函数 加载程序到硬盘 #####################################################
 .PHONY:mk_dir hd clean build all run  
 
@@ -140,7 +143,7 @@ mk_dir:
 hd:
 	dd if=$(BUILD_DIR)/boot.bin of=master.img bs=512 count=1  conv=notrunc
 	dd if=$(BUILD_DIR)/loader.bin of=master.img bs=512 count=4 seek=2  conv=notrunc
-	test -n "$$(find $(BUILD)/system.bin -size -100k)"
+	test -n "$$(find $(BUILD_DIR)/system.bin -size -100k)"
 	dd if=$(BUILD_DIR)/system.bin of=master.img bs=512 count=200 seek=10 conv=notrunc
 
 build:$(BUILD_DIR)/boot.bin \
@@ -167,6 +170,7 @@ build:$(BUILD_DIR)/boot.bin \
 	$(BUILD_DIR)/gate.o	\
 	$(BUILD_DIR)/syscall.o	\
 	$(BUILD_DIR)/list.o	\
+	$(BUILD_DIR)/bitmap.o \
 	$(BUILD_DIR)/kernel.bin \
 	$(BUILD_DIR)/system.bin \
 	$(BUILD_DIR)/system.map

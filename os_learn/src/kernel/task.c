@@ -67,7 +67,7 @@ task_t *running_task()
 void schedule()
 {
     assert(!get_interrupt_state()); // 不可中断
-
+    BMB;
     task_t *current = running_task();
     task_t *next = task_search(TASK_READY);
 
