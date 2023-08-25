@@ -105,8 +105,8 @@ INTERRUPT_HANDLER 0x2a, 0
 INTERRUPT_HANDLER 0x2b, 0
 INTERRUPT_HANDLER 0x2c, 0
 INTERRUPT_HANDLER 0x2d, 0
-INTERRUPT_HANDLER 0x2e, 0
-INTERRUPT_HANDLER 0x2f, 0
+INTERRUPT_HANDLER 0x2e, 0; harddisk1 硬盘主通道
+INTERRUPT_HANDLER 0x2f, 0; harddisk2 硬盘从通道
 
 ; 下面的数组记录了每个中断入口函数的指针
 section .data
@@ -167,7 +167,7 @@ extern syscall_check
 extern syscall_table
 global syscall_handler
 syscall_handler:
-    xchg bx, bx
+    ; xchg bx, bx
 
     ; 验证系统调用号
     push eax
@@ -186,7 +186,7 @@ syscall_handler:
     pusha
 
     push 0x80; 向中断处理函数传递参数中断向量 vector
-    xchg bx, bx
+    ; xchg bx, bx
 
     push edx; 第三个参数
     push ecx; 第二个参数
@@ -195,7 +195,7 @@ syscall_handler:
     ; 调用系统调用处理函数，syscall_table 中存储了系统调用处理函数的指针
     call [syscall_table + eax * 4]
 
-    xchg bx, bx
+    ; xchg bx, bx
     add esp, 12; 系统调用结束恢复栈
 
     ; 修改栈中 eax 寄存器，设置系统调用返回值

@@ -41,6 +41,9 @@ $(BUILD_DIR)/schedule.o: $(SRC)/kernel/schedule.asm
 $(BUILD_DIR)/handler.o: $(SRC)/kernel/handler.asm
 	nasm -f elf32 $< -o $@
 
+$(BUILD_DIR)/test_syscall.o: $(SRC)/kernel/test_syscall.asm
+	nasm -f elf32 $< -o $@
+
 $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/start.o \
 	$(BUILD_DIR)/main.o \
 	$(BUILD_DIR)/io.o \
@@ -53,18 +56,18 @@ $(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/start.o \
 	$(BUILD_DIR)/global.o	\
 	$(BUILD_DIR)/schedule.o	\
 	$(BUILD_DIR)/task.o	\
-	$(BUILD_DIR)/handler.o	\
 	$(BUILD_DIR)/interrupt.o	\
+	$(BUILD_DIR)/handler.o	\
 	$(BUILD_DIR)/stdlib.o	\
 	$(BUILD_DIR)/clock.o	\
 	$(BUILD_DIR)/time.o	\
 	$(BUILD_DIR)/rtc.o	\
 	$(BUILD_DIR)/memory.o	\
+	$(BUILD_DIR)/bitmap.o	\
 	$(BUILD_DIR)/gate.o	\
+	$(BUILD_DIR)/test_syscall.o	\
 	$(BUILD_DIR)/syscall.o	\
 	$(BUILD_DIR)/list.o	\
-	$(BUILD_DIR)/bitmap.o
-
 	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
 $(BUILD_DIR)/system.bin: $(BUILD_DIR)/kernel.bin
@@ -104,16 +107,16 @@ $(BUILD_DIR)/task.o: $(SRC)/kernel/task.c
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@		
 
 $(BUILD_DIR)/interrupt.o: $(SRC)/kernel/interrupt.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_DIR)/stdlib.o: $(SRC)/lib/stdlib.c
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_DIR)/clock.o: $(SRC)/kernel/clock.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@		
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_DIR)/time.o: $(SRC)/kernel/time.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_DIR)/rtc.o: $(SRC)/kernel/rtc.c
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
@@ -122,18 +125,16 @@ $(BUILD_DIR)/memory.o: $(SRC)/kernel/memory.c
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_DIR)/bitmap.o: $(SRC)/kernel/bitmap.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@		
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_DIR)/gate.o: $(SRC)/kernel/gate.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_DIR)/syscall.o: $(SRC)/kernel/syscall.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
 $(BUILD_DIR)/list.o: $(SRC)/kernel/list.c
 	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-
 ############################################################## 定义函数 加载程序到硬盘 #####################################################
 .PHONY:mk_dir hd clean build all run  
 
@@ -160,17 +161,19 @@ build:$(BUILD_DIR)/boot.bin \
 	$(BUILD_DIR)/global.o	\
 	$(BUILD_DIR)/schedule.o	\
 	$(BUILD_DIR)/task.o	\
-	$(BUILD_DIR)/handler.o	\
 	$(BUILD_DIR)/interrupt.o	\
+	$(BUILD_DIR)/handler.o	\
 	$(BUILD_DIR)/stdlib.o	\
 	$(BUILD_DIR)/clock.o	\
 	$(BUILD_DIR)/time.o	\
 	$(BUILD_DIR)/rtc.o	\
 	$(BUILD_DIR)/memory.o	\
+	$(BUILD_DIR)/bitmap.o	\
 	$(BUILD_DIR)/gate.o	\
+	$(BUILD_DIR)/test_syscall.o	\
 	$(BUILD_DIR)/syscall.o	\
 	$(BUILD_DIR)/list.o	\
-	$(BUILD_DIR)/bitmap.o \
+	$(BUILD_DIR)/bit	\
 	$(BUILD_DIR)/kernel.bin \
 	$(BUILD_DIR)/system.bin \
 	$(BUILD_DIR)/system.map
