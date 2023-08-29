@@ -1,39 +1,29 @@
+#include <onix/onix.h>
+#include <onix/types.h>
+#include <onix/io.h>
 
-#include <onix/debug.h>
-#include <onix/interrupt.h>
+// - CRT 地址寄存器 0x3D4
+// - CRT 数据寄存器 0x3D5
+// - CRT 光标位置 - 高位 0xE
+// - CRT 光标位置 - 低位 0xF
 
-#define LOGK(fmt, args...) DEBUGK(fmt, ##args)
+#define CRT_ADDR_REG 0x3d4
+#define CRT_DATA_REG 0x3d5
 
-extern void memory_map_init();
-extern void mapping_init();
-extern void arena_init();
-extern void interrupt_init();
-extern void clock_init();
-extern void time_init();
-extern void rtc_init();
-extern void keyboard_init();
-extern void ide_init();
-extern void task_init();
-extern void syscall_init();
-extern void tss_init();
-extern void hang();
+#define CRT_CURSOR_H 0xe
+#define CRT_CURSOR_L 0xf
 
 void kernel_init()
 {
-    tss_init();
-    memory_map_init();
-    mapping_init();
-    arena_init();
+    outb(CRT_ADDR_REG, CRT_CURSOR_H);
+    u16 pos = inb(CRT_DATA_REG) << 8;
+    outb(CRT_ADDR_REG, CRT_CURSOR_L);
+    pos |= inb(CRT_DATA_REG);
 
-    interrupt_init();
-    clock_init();
-    keyboard_init();
-    time_init();
-    // rtc_init();
-    ide_init();
+    outb(CRT_ADDR_REG, CRT_CURSOR_H);
+    outb(CRT_DATA_REG, 0);
+    outb(CRT_ADDR_REG, CRT_CURSOR_L);
+    outb(CRT_DATA_REG, 123);
 
-    task_init();
-    syscall_init();
-
-    set_interrupt_state(true);
+    return;
 }

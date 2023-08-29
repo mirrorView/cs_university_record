@@ -1,11 +1,7 @@
-BUILD_DIR = ./build
-SRC = .
-AS = nasm 
-CC = gcc
-LD = ld
+BUILD:=../build
+SRC:=.
 
 ENTRYPOINT:=0x10000
-
 
 CFLAGS:= -m32 # 32 位的程序
 CFLAGS+= -fno-builtin	# 不需要 gcc 内置函数
@@ -19,173 +15,73 @@ CFLAGS:=$(strip ${CFLAGS})
 DEBUG:= -g
 INCLUDE:=-I$(SRC)/include
 
+$(BUILD)/boot/%.bin: $(SRC)/boot/%.asm
+	$(shell mkdir -p $(dir $@))
+	nasm -f bin $< -o $@
 
-############################################################### 汇编  #####################################################################
+$(BUILD)/kernel/%.o: $(SRC)/kernel/%.asm
+	$(shell mkdir -p $(dir $@))
+	nasm -f elf32 $(DEBUG) $< -o $@
 
-$(BUILD_DIR)/boot.bin:boot/boot.asm
-	$(AS) -f bin $< -o $@	
+$(BUILD)/kernel/%.o: $(SRC)/kernel/%.c
+	$(shell mkdir -p $(dir $@))
+	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
 
+$(BUILD)/kernel.bin: \
+	$(BUILD)/kernel/start.o \
+	$(BUILD)/kernel/main.o \
+	$(BUILD)/kernel/io.o
 
-$(BUILD_DIR)/loader.bin:boot/loader.asm
-	$(AS) -f bin $< -o $@	
-
-$(BUILD_DIR)/start.o: $(SRC)/kernel/start.asm
-	nasm -f elf32 $< -o $@
-
-$(BUILD_DIR)/io.o: $(SRC)/kernel/io.asm
-	nasm -f elf32 $< -o $@
-
-$(BUILD_DIR)/schedule.o: $(SRC)/kernel/schedule.asm
-	nasm -f elf32 $< -o $@
-
-$(BUILD_DIR)/handler.o: $(SRC)/kernel/handler.asm
-	nasm -f elf32 $< -o $@
-
-$(BUILD_DIR)/test_syscall.o: $(SRC)/kernel/test_syscall.asm
-	nasm -f elf32 $< -o $@
-
-$(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/start.o \
-	$(BUILD_DIR)/main.o \
-	$(BUILD_DIR)/io.o \
-	$(BUILD_DIR)/string.o \
-	$(BUILD_DIR)/console.o \
-	$(BUILD_DIR)/printk.o \
-	$(BUILD_DIR)/vsprintf.o \
-	$(BUILD_DIR)/assert.o	\
-	$(BUILD_DIR)/debug.o	\
-	$(BUILD_DIR)/global.o	\
-	$(BUILD_DIR)/schedule.o	\
-	$(BUILD_DIR)/task.o	\
-	$(BUILD_DIR)/interrupt.o	\
-	$(BUILD_DIR)/handler.o	\
-	$(BUILD_DIR)/stdlib.o	\
-	$(BUILD_DIR)/clock.o	\
-	$(BUILD_DIR)/time.o	\
-	$(BUILD_DIR)/rtc.o	\
-	$(BUILD_DIR)/memory.o	\
-	$(BUILD_DIR)/bitmap.o	\
-	$(BUILD_DIR)/gate.o	\
-	$(BUILD_DIR)/test_syscall.o	\
-	$(BUILD_DIR)/syscall.o	\
-	$(BUILD_DIR)/list.o	\
+	$(shell mkdir -p $(dir $@))
 	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
 
-$(BUILD_DIR)/system.bin: $(BUILD_DIR)/kernel.bin
+$(BUILD)/system.bin: $(BUILD)/kernel.bin
 	objcopy -O binary $< $@
 
-$(BUILD_DIR)/system.map: $(BUILD_DIR)/kernel.bin
+$(BUILD)/system.map: $(BUILD)/kernel.bin
 	nm $< | sort > $@
 
+$(BUILD)/master.img: $(BUILD)/boot/boot.bin \
+	$(BUILD)/boot/loader.bin \
+	$(BUILD)/system.bin \
+	$(BUILD)/system.map \
 
+	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
+	dd if=$(BUILD)/boot/boot.bin of=$@ bs=512 count=1 conv=notrunc
+	dd if=$(BUILD)/boot/loader.bin of=$@ bs=512 count=4 seek=2 conv=notrunc
+	dd if=$(BUILD)/system.bin of=$@ bs=512 count=200 seek=10 conv=notrunc
 
-############################################################## c 代码 #########################################################################
-$(BUILD_DIR)/main.o: $(SRC)/kernel/main.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
+test: $(BUILD)/master.img
 
-$(BUILD_DIR)/string.o: $(SRC)/lib/string.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
-
-$(BUILD_DIR)/console.o: $(SRC)/kernel/console.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
-
-$(BUILD_DIR)/printk.o: $(SRC)/kernel/printk.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
-
-$(BUILD_DIR)/vsprintf.o: $(SRC)/lib/vsprintf.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
-
-$(BUILD_DIR)/assert.o: $(SRC)/kernel/assert.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
-
-$(BUILD_DIR)/debug.o: $(SRC)/kernel/debug.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-$(BUILD_DIR)/global.o: $(SRC)/kernel/global.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@	
-
-$(BUILD_DIR)/task.o: $(SRC)/kernel/task.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@		
-
-$(BUILD_DIR)/interrupt.o: $(SRC)/kernel/interrupt.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-$(BUILD_DIR)/stdlib.o: $(SRC)/lib/stdlib.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-$(BUILD_DIR)/clock.o: $(SRC)/kernel/clock.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-$(BUILD_DIR)/time.o: $(SRC)/kernel/time.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-$(BUILD_DIR)/rtc.o: $(SRC)/kernel/rtc.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-$(BUILD_DIR)/memory.o: $(SRC)/kernel/memory.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-$(BUILD_DIR)/bitmap.o: $(SRC)/kernel/bitmap.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-$(BUILD_DIR)/gate.o: $(SRC)/kernel/gate.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-$(BUILD_DIR)/syscall.o: $(SRC)/kernel/syscall.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-
-$(BUILD_DIR)/list.o: $(SRC)/kernel/list.c
-	gcc $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@
-############################################################## 定义函数 加载程序到硬盘 #####################################################
-.PHONY:mk_dir hd clean build all run  
-
-mk_dir:
-	if [ ! -d $(BUILD_DIR) ];then mkdir $(BUILD_DIR);fi
-
-hd:
-	dd if=$(BUILD_DIR)/boot.bin of=master.img bs=512 count=1  conv=notrunc
-	dd if=$(BUILD_DIR)/loader.bin of=master.img bs=512 count=4 seek=2  conv=notrunc
-	test -n "$$(find $(BUILD_DIR)/system.bin -size -100k)"
-	dd if=$(BUILD_DIR)/system.bin of=master.img bs=512 count=200 seek=10 conv=notrunc
-
-build:$(BUILD_DIR)/boot.bin \
-	$(BUILD_DIR)/loader.bin \
-	$(BUILD_DIR)/start.o \
-	$(BUILD_DIR)/io.o \
-	$(BUILD_DIR)/main.o \
-	$(BUILD_DIR)/console.o  \
-	$(BUILD_DIR)/string.o  \
-	$(BUILD_DIR)/printk.o	\
-	$(BUILD_DIR)/vsprintf.o \
-	$(BUILD_DIR)/assert.o	\
-	$(BUILD_DIR)/debug.o	\
-	$(BUILD_DIR)/global.o	\
-	$(BUILD_DIR)/schedule.o	\
-	$(BUILD_DIR)/task.o	\
-	$(BUILD_DIR)/interrupt.o	\
-	$(BUILD_DIR)/handler.o	\
-	$(BUILD_DIR)/stdlib.o	\
-	$(BUILD_DIR)/clock.o	\
-	$(BUILD_DIR)/time.o	\
-	$(BUILD_DIR)/rtc.o	\
-	$(BUILD_DIR)/memory.o	\
-	$(BUILD_DIR)/bitmap.o	\
-	$(BUILD_DIR)/gate.o	\
-	$(BUILD_DIR)/test_syscall.o	\
-	$(BUILD_DIR)/syscall.o	\
-	$(BUILD_DIR)/list.o	\
-	$(BUILD_DIR)/bit	\
-	$(BUILD_DIR)/kernel.bin \
-	$(BUILD_DIR)/system.bin \
-	$(BUILD_DIR)/system.map
-	
-
+.PHONY: clean
 clean:
-	cd $(BUILD_DIR) && rm -f ./*
+	rm -rf $(BUILD)
 
-all:clean mk_dir build hd
+.PHONY: bochs
+bochs: $(BUILD)/master.img
+	bochs -q -f ../bochs/bochsrc
 
-run:
-	bochs -q -f /home/gc/Desktop/workspace/cs_university_record/os_learn/src/bochsrc.disk 
+.PHONY: bochsg
+bochsg: $(BUILD)/master.img
+	bochs-gdb -q -f ../bochs/bochsrc.gdb
 
-debug:
-	bochs -q -f /home/gc/Desktop/workspace/cs_university_record/os_learn/src/bochsrc.gdb 
+.PHONY: qemu
+qemu: $(BUILD)/master.img
+	qemu-system-i386 \
+	-m 32M \
+	-boot c \
+	-hda $<
+
+.PHONY: qemug
+qemug: $(BUILD)/master.img
+	qemu-system-i386 \
+	-s -S \
+	-m 32M \
+	-boot c \
+	-hda $<
+
+$(BUILD)/master.vmdk: $(BUILD)/master.img
+	qemu-img convert -O vmdk $< $@
+
+.PHONY:vmdk
+vmdk: $(BUILD)/master.vmdk
