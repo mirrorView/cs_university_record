@@ -8,7 +8,7 @@
             "name": "onix - Build and debug kernel",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/src/build/kernel.bin",
+            "program": "${workspaceFolder}/build/kernel.bin",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
