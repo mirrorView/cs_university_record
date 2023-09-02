@@ -1,6 +1,8 @@
 {
         "files.associations": {
             "console.h": "c",
-            "stdio.h": "c"
+            "stdio.h": "c",
+            "stdarg.h": "c",
+            "debug.h": "c"
         }
     }

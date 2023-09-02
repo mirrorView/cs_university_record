@@ -1,19 +1,20 @@
-#include <onix/onix.h>
-#include <onix/types.h>
-#include <onix/io.h>
-#include <onix/string.h>
-#include <onix/console.h>
-
-char message[] = "what onix!!!\n";
-char buf[1024];
+extern void console_init();
+extern void gdt_init();
+extern void interrupt_init();
+extern void clock_init();
+extern void time_init();
+extern void rtc_init();
+extern void hang();
 
 void kernel_init()
 {
     console_init();
-    while (true)
-    {
-        console_write(message, sizeof(message) - 1);
-    }
-
-    return;
+    gdt_init();
+    interrupt_init();
+    clock_init();
+    time_init();
+    rtc_init();
+    // // task_init();
+    asm volatile("sti");
+    hang();
 }

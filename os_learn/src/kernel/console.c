@@ -1,9 +1,6 @@
 #include <onix/console.h>
 #include <onix/io.h>
-#include <onix/types.h>
-
-
-
+#include <onix/string.h>
 
 #define CRT_ADDR_REG 0x3D4 // CRT(6845)索引寄存器
 #define CRT_DATA_REG 0x3D5 // CRT(6845)数据寄存器
@@ -13,15 +10,13 @@
 #define CRT_CURSOR_H 0xE     // 光标位置 - 高位
 #define CRT_CURSOR_L 0xF     // 光标位置 - 低位
 
-
 #define MEM_BASE 0xB8000              // 显卡内存起始位置
-#define MEM_SIZE 0x4000               // 显卡内存大小 8屏
-#define MEM_END (MEM_BASE + MEM_SIZE) // 显卡内存结束位置 
+#define MEM_SIZE 0x4000               // 显卡内存大小
+#define MEM_END (MEM_BASE + MEM_SIZE) // 显卡内存结束位置
 #define WIDTH 80                      // 屏幕文本列数
 #define HEIGHT 25                     // 屏幕文本行数
-#define ROW_SIZE (WIDTH * 2)          // 每行字节数 两个字节一个字，一个属性一个内容
+#define ROW_SIZE (WIDTH * 2)          // 每行字节数
 #define SCR_SIZE (ROW_SIZE * HEIGHT)  // 屏幕字节数
-
 
 #define ASCII_NUL 0x00
 #define ASCII_ENQ 0x05
@@ -34,17 +29,16 @@
 #define ASCII_CR 0x0D  // \r
 #define ASCII_DEL 0x7F
 
-
 static u32 screen; // 当前显示器开始的内存位置
 
 static u32 pos; // 记录当前光标的内存位置
 
-static x, y; // 当前光标的坐标
+static u32 x, y; // 当前光标的坐标
 
 static u8 attr = 7;        // 字符样式
 static u16 erase = 0x0720; // 空格
 
-
+// 获得当前显示器的开始位置
 static void get_screen()
 {
     outb(CRT_ADDR_REG, CRT_START_ADDR_H); // 开始位置高地址
@@ -52,23 +46,18 @@ static void get_screen()
     outb(CRT_ADDR_REG, CRT_START_ADDR_L);
     screen |= inb(CRT_DATA_REG);
 
-    /**
-     * 为何显示内存的位置需要 << 1
-     * 
-    */
     screen <<= 1; // screen *= 2
     screen += MEM_BASE;
 }
 
-
-static void  set_screen(){
+// 设置当前显示器开始的位置
+static void set_screen()
+{
     outb(CRT_ADDR_REG, CRT_START_ADDR_H); // 开始位置高地址
     outb(CRT_DATA_REG, ((screen - MEM_BASE) >> 9) & 0xff);
     outb(CRT_ADDR_REG, CRT_START_ADDR_L);
     outb(CRT_DATA_REG, ((screen - MEM_BASE) >> 1) & 0xff);
 }
-
-
 
 // 获得当前光标位置
 static void get_cursor()
@@ -88,16 +77,16 @@ static void get_cursor()
     y = delta / WIDTH;
 }
 
-
-static void  set_cursor(){
+static void set_cursor()
+{
     outb(CRT_ADDR_REG, CRT_CURSOR_H); // 光标高地址
     outb(CRT_DATA_REG, ((pos - MEM_BASE) >> 9) & 0xff);
     outb(CRT_ADDR_REG, CRT_CURSOR_L);
     outb(CRT_DATA_REG, ((pos - MEM_BASE) >> 1) & 0xff);
-
 }
 
-void console_clear(){
+void console_clear()
+{
     screen = MEM_BASE;
     pos = MEM_BASE;
     x = y = 0;
@@ -105,36 +94,31 @@ void console_clear(){
     set_screen();
 
     u16 *ptr = (u16 *)MEM_BASE;
-    while (ptr < MEM_END)
+    while (ptr < (u16 *)MEM_END)
     {
         *ptr++ = erase;
     }
 }
 
-
-
 // 向上滚屏
 static void scroll_up()
 {
-    if (screen + SCR_SIZE + ROW_SIZE < MEM_END)
+    if (screen + SCR_SIZE + ROW_SIZE >= MEM_END)
     {
-        u32 *ptr = (u32 *)(screen + SCR_SIZE);
-        for (size_t i = 0; i < WIDTH; i++)
-        {
-            *ptr++ = erase;
-        }
-        screen += ROW_SIZE;
-        pos += ROW_SIZE;
-    }
-    else
-    {
-        memcpy(MEM_BASE, screen, SCR_SIZE);
+        memcpy((void *)MEM_BASE, (void *)screen, SCR_SIZE);
         pos -= (screen - MEM_BASE);
         screen = MEM_BASE;
     }
+
+    u32 *ptr = (u32 *)(screen + SCR_SIZE);
+    for (size_t i = 0; i < WIDTH; i++)
+    {
+        *ptr++ = erase;
+    }
+    screen += ROW_SIZE;
+    pos += ROW_SIZE;
     set_screen();
 }
-
 
 static void command_lf()
 {
@@ -146,7 +130,6 @@ static void command_lf()
     }
     scroll_up();
 }
-
 
 static void command_cr()
 {
@@ -169,9 +152,11 @@ static void command_del()
     *(u16 *)pos = erase;
 }
 
-void console_write(char *buf, u32 count){
+extern void start_beep();
+
+void console_write(char *buf, u32 count)
+{
     char ch;
-    char *ptr = (char *)pos;
     while (count--)
     {
         ch = *buf++;
@@ -180,7 +165,7 @@ void console_write(char *buf, u32 count){
         case ASCII_NUL:
             break;
         case ASCII_BEL:
-            // todo \a
+            start_beep();
             break;
         case ASCII_BS:
             command_bs();
@@ -210,12 +195,11 @@ void console_write(char *buf, u32 count){
                 command_lf();
             }
 
-            *ptr = ch;
-            ptr++;
-            *ptr = attr;
-            ptr++;
+            *((char *)pos) = ch;
+            pos++;
+            *((char *)pos) = attr;
+            pos++;
 
-            pos += 2;
             x++;
             break;
         }
@@ -223,8 +207,7 @@ void console_write(char *buf, u32 count){
     set_cursor();
 }
 
-
-void console_init(){
+void console_init()
+{
     console_clear();
 }
-
