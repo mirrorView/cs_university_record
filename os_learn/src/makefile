@@ -39,6 +39,7 @@ $(BUILD)/kernel.bin: \
 	$(BUILD)/kernel/debug.o \
 	$(BUILD)/kernel/global.o \
 	$(BUILD)/kernel/task.o \
+	$(BUILD)/kernel/gate.o \
 	$(BUILD)/kernel/schedule.o \
 	$(BUILD)/kernel/interrupt.o \
 	$(BUILD)/kernel/handler.o \
@@ -48,6 +49,10 @@ $(BUILD)/kernel.bin: \
 	$(BUILD)/kernel/rtc.o \
 	$(BUILD)/kernel/memory.o \
 	$(BUILD)/lib/bitmap.o \
+	$(BUILD)/lib/syscall.o \
+	$(BUILD)/lib/list.o \
+	$(BUILD)/kernel/thread.o \
+	$(BUILD)/kernel/mutex.o \
 
 	$(shell mkdir -p $(dir $@))
 	ld -m elf_i386 -static $^ -o $@ -Ttext $(ENTRYPOINT)
